@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+venv/
+env/
+conda/
+
+# IDE/editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Project outputs
+output/
+outputs/
+log/
+logs/
+runs/
+wandb/
+tmp/
+
+# Model weights and large artifacts
+pt/
+weights/
+checkpoints/
+*.pth
+*.pt
+*.onnx
+*.engine
+*.pkl
+*.zip
+*.tar
+*.tar.gz
+
+# Native/CUDA build artifacts
+build/
+dist/
+*.egg-info/
+*.so
+models/fdqdet/ops/build/
+models/fdqdet/ops/dist/
+models/fdqdet/ops/*.egg-info/

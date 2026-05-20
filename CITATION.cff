@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+title: FDQ-Det
+authors:
+  - family-names: Ma
+    given-names: Zhejie
+repository-code: https://github.com/Mikael-jay/FDQ-Det
+license: Apache-2.0
+message: If you use FDQ-Det in academic work, please cite this repository.

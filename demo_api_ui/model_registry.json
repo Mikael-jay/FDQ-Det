@@ -1,0 +1,26 @@
+{
+    "models": [
+        {
+            "id": "fdqdet-aitod-default",
+            "name": "FDQ-Det AITODv2",
+            "dataset": "aitod",
+            "checkpoint": "pt/FDQ_Det_AITODv2_best321.pth",
+            "config": "config/fdqdet_aitod.py",
+            "default_params": {
+                "conf_thresh": 0.55,
+                "nms_iou_thresh": 0.5
+            }
+        },
+        {
+            "id": "fdqdet-visdrone-default",
+            "name": "FDQ-Det VisDrone",
+            "dataset": "visdrone",
+            "checkpoint": "pt/FDQ_Det_VisDrone_best384.pth",
+            "config": "config/fdqdet_visdrone.py",
+            "default_params": {
+                "conf_thresh": 0.35,
+                "nms_iou_thresh": 0.5
+            }
+        }
+    ]
+}

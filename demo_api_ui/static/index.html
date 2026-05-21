@@ -36,6 +36,15 @@
                     <label for="customConfig">自定义 config 路径</label>
                     <input id="customConfig" type="text" placeholder="例如: config/fdqdet_aitod.py" />
                 </div>
+                <div class="field">
+                    <label for="deviceSelect">Device</label>
+                    <select id="deviceSelect">
+                        <option value="">auto</option>
+                        <option value="cpu">cpu</option>
+                        <option value="cuda">cuda</option>
+                    </select>
+                    <small class="smallHint">Choose `cpu` to force CPU inference on the upstream API.</small>
+                </div>
                 <div class="grid2">
                     <div class="field">
                         <label for="confThresh">conf_thresh</label>

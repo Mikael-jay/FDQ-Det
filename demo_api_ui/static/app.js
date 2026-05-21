@@ -8,12 +8,15 @@ const confThresh = document.getElementById("confThresh");
 const nmsIouThresh = document.getElementById("nmsIouThresh");
 const customCheckpoint = document.getElementById("customCheckpoint");
 const customConfig = document.getElementById("customConfig");
+const deviceSelect = document.getElementById("deviceSelect");
 const selectedCount = document.getElementById("selectedCount");
 const modelTemplateHint = document.getElementById("modelTemplateHint");
 const resultList = document.getElementById("resultList");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const pageInfo = document.getElementById("pageInfo");
+
+
 
 let loadedModels = [];
 let objectUrls = [];
@@ -197,6 +200,9 @@ predictBtn.addEventListener("click", async () => {
         if (config) {
             formData.append("custom_config", config);
         }
+        // include device preference ("" means upstream default)
+        const deviceValue = deviceSelect ? deviceSelect.value : "";
+        formData.append("device", deviceValue);
 
         const resp = await fetch("/api/predict_batch", {
             method: "POST",

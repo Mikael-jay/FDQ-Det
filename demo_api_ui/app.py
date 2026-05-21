@@ -83,6 +83,7 @@ async def call_upstream_predict(
     nms_iou_thresh: float,
     checkpoint: Optional[str],
     config: Optional[str],
+    device: Optional[str] = None,
 ) -> Dict[str, Any]:
     files = {
         "image": (image_name, image_bytes, image_content_type or "image/jpeg")
@@ -97,6 +98,8 @@ async def call_upstream_predict(
         data["checkpoint"] = checkpoint
     if config:
         data["config"] = config
+    if device is not None:
+        data["device"] = device
 
     response = await client.post(f"{api_base_url}/predict", files=files, data=data)
     if response.status_code >= 400:
@@ -144,6 +147,7 @@ def create_app(api_base_url: str, registry_path: Path) -> FastAPI:
         dataset: Optional[str] = Form(default=None),
         conf_thresh: float = Form(default=0.55),
         nms_iou_thresh: float = Form(default=0.5),
+        device: Optional[str] = Form(default=None),
     ) -> Dict[str, Any]:
         try:
             image_bytes = await image.read()
@@ -171,6 +175,7 @@ def create_app(api_base_url: str, registry_path: Path) -> FastAPI:
                     nms_iou_thresh=nms_iou_thresh,
                     checkpoint=checkpoint,
                     config=config,
+                    device=device,
                 )
             rendered = draw_detections_locally(image_bytes, result.get("detections", []))
             rendered_base64 = base64.b64encode(rendered).decode("ascii")
@@ -197,6 +202,7 @@ def create_app(api_base_url: str, registry_path: Path) -> FastAPI:
         dataset: Optional[str] = Form(default=None),
         conf_thresh: float = Form(default=0.55),
         nms_iou_thresh: float = Form(default=0.5),
+        device: Optional[str] = Form(default=None),
     ) -> Dict[str, Any]:
         try:
             if not images:
@@ -231,6 +237,7 @@ def create_app(api_base_url: str, registry_path: Path) -> FastAPI:
                             nms_iou_thresh=nms_iou_thresh,
                             checkpoint=checkpoint,
                             config=config,
+                            device=device,
                         )
                         rendered = draw_detections_locally(image_bytes, result.get("detections", []))
                         rendered_base64 = base64.b64encode(rendered).decode("ascii")

@@ -4,9 +4,8 @@ from pathlib import Path
 from typing import Optional
 
 import uvicorn
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Request
 from PIL import Image
-
 
 from fdqdet_infer import (
     MODEL_CACHE,
@@ -18,10 +17,13 @@ from fdqdet_infer import (
     resolve_config_checkpoint,
 )
 
-IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"}
 
 def create_app(device: str, allow_external_checkpoints: bool = False) -> FastAPI:
     app = FastAPI(title="FDQ-Det Inference API")
+
+    def resolve_request_device(request_device: Optional[str]) -> str:
+        # Allow per-request override while keeping the startup device as the default.
+        return request_device or device
 
     @app.get("/health")
     def health() -> dict:
@@ -33,6 +35,7 @@ def create_app(device: str, allow_external_checkpoints: bool = False) -> FastAPI
 
     @app.post("/predict")
     async def predict(
+        request: Request,
         image: UploadFile = File(...),
         checkpoint: Optional[str] = Form(default=None),
         config: Optional[str] = Form(default=None),
@@ -42,6 +45,9 @@ def create_app(device: str, allow_external_checkpoints: bool = False) -> FastAPI
         visualize: bool = Form(default=False),
     ) -> dict:
         try:
+            form = await request.form()
+            request_device_value = (form.get("device") or "").strip() or None
+            effective_device = resolve_request_device(request_device_value)
             config_path, checkpoint_path = resolve_config_checkpoint(dataset, config, checkpoint)
             ensure_checkpoint_allowed(checkpoint_path, allow_external=allow_external_checkpoints)
             image_bytes = await image.read()
@@ -53,7 +59,7 @@ def create_app(device: str, allow_external_checkpoints: bool = False) -> FastAPI
                 checkpoint=str(checkpoint_path),
                 conf_thresh=conf_thresh,
                 nms_iou_thresh=nms_iou_thresh,
-                device=device,
+                device=effective_device,
                 use_cache=True,
             )
             if visualize:
@@ -71,6 +77,7 @@ def create_app(device: str, allow_external_checkpoints: bool = False) -> FastAPI
 
     @app.post("/predict_batch")
     async def predict_batch(
+        request: Request,
         images: list[UploadFile] = File(...),
         checkpoint: Optional[str] = Form(default=None),
         config: Optional[str] = Form(default=None),
@@ -81,9 +88,12 @@ def create_app(device: str, allow_external_checkpoints: bool = False) -> FastAPI
     ) -> dict:
         """Process multiple images in one request."""
         try:
+            form = await request.form()
+            request_device_value = (form.get("device") or "").strip() or None
+            effective_device = resolve_request_device(request_device_value)
             config_path, checkpoint_path = resolve_config_checkpoint(dataset, config, checkpoint)
             ensure_checkpoint_allowed(checkpoint_path, allow_external=allow_external_checkpoints)
-            
+
             results = []
             for idx, image_file in enumerate(images, start=1):
                 try:
@@ -96,11 +106,11 @@ def create_app(device: str, allow_external_checkpoints: bool = False) -> FastAPI
                         checkpoint=str(checkpoint_path),
                         conf_thresh=conf_thresh,
                         nms_iou_thresh=nms_iou_thresh,
-                        device=device,
+                        device=effective_device,
                         use_cache=True,
                     )
                     result["filename"] = image_file.filename or f"image_{idx}"
-                    
+
                     if visualize:
                         out_dir = PROJECT_ROOT / "output" / "api"
                         out_dir.mkdir(parents=True, exist_ok=True)
@@ -108,16 +118,17 @@ def create_app(device: str, allow_external_checkpoints: bool = False) -> FastAPI
                         vis_path = out_dir / f"{stem}_{image_digest(image_bytes)}.jpg"
                         draw_detections(pil_image, result["detections"]).save(vis_path)
                         result["visualization_path"] = str(vis_path)
-                    
+
                     results.append(result)
                 except Exception as e:
                     results.append({
                         "filename": image_file.filename or f"image_{idx}",
                         "error": str(e),
                     })
-            
+
             return {
                 "num_images": len(images),
+                "device": effective_device,
                 "results": results,
             }
         except (FileNotFoundError, PermissionError, ValueError) as exc:

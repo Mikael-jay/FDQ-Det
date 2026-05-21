@@ -22,6 +22,13 @@ class MSDeformAttnFunction(Function):
     @staticmethod
     def forward(ctx, value, value_spatial_shapes, value_level_start_index, sampling_locations, attention_weights, im2col_step):
         ctx.im2col_step = im2col_step
+        ctx.is_cpu = not value.is_cuda
+        if ctx.is_cpu:
+            # CPU inference fallback: use the pure PyTorch implementation instead of the CUDA extension.
+            output = ms_deform_attn_core_pytorch(value, value_spatial_shapes, sampling_locations, attention_weights)
+            ctx.save_for_backward(value, value_spatial_shapes, value_level_start_index, sampling_locations, attention_weights)
+            return output
+
         output = MSDA.ms_deform_attn_forward(
             value, value_spatial_shapes, value_level_start_index, sampling_locations, attention_weights, ctx.im2col_step)
         ctx.save_for_backward(value, value_spatial_shapes, value_level_start_index, sampling_locations, attention_weights)
@@ -31,6 +38,11 @@ class MSDeformAttnFunction(Function):
     @once_differentiable
     def backward(ctx, grad_output):
         value, value_spatial_shapes, value_level_start_index, sampling_locations, attention_weights = ctx.saved_tensors
+        if getattr(ctx, "is_cpu", False):
+            raise RuntimeError(
+                "CPU backward for MSDeformAttn is not implemented. "
+                "Use CPU only for inference, or run training with CUDA."
+            )
         grad_value, grad_sampling_loc, grad_attn_weight = \
             MSDA.ms_deform_attn_backward(
                 value, value_spatial_shapes, value_level_start_index, sampling_locations, attention_weights, grad_output, ctx.im2col_step)

@@ -173,6 +173,13 @@ Open:
 http://127.0.0.1:8081
 ```
 
+### Advanced Options
+
+In the demo UI, you can:
+- **Device Selection**: Choose `cpu`, `cuda`, or `auto` (default startup device) from the Device dropdown in Advanced Options. This allows overriding the API's startup device on a per-request basis.
+- **Custom Checkpoint/Config**: Specify paths to custom model files for inference.
+- **Confidence Threshold & IoU Threshold**: Adjust detection filtering parameters.
+
 Edit `demo_api_ui/model_registry.json` to add more models or change default thresholds.
 
 ## Extending To Other Datasets
